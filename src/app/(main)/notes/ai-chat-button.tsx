@@ -7,7 +7,8 @@ import { useAuthToken } from "@convex-dev/auth/react";
 import { Bot, Expand, Minimize, Send, Trash, X } from "lucide-react";
 import { useRef, useState } from "react";
 import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport } from "ai";
+import { DefaultChatTransport, UIMessage } from "ai";
+import Markdown from "@/components/markdown";
 
 const convexSiteUrl = process.env.NEXT_PUBLIC_CONVEX_URL?.replace(
   /.cloud$/,
@@ -107,7 +108,7 @@ function AIChatBox({ open, onClose }: AIChatBoxProps) {
 
       <div className="flex-1 space-y-4 overflow-y-auto p-3">
         {messages.map(message => (
-          <p key={message.id}>{JSON.stringify(message)}</p>
+          <ChatMessage key={message.id} message={message}/>
         ))}
         <div ref={messagesEndRef} />
       </div>
@@ -125,6 +126,45 @@ function AIChatBox({ open, onClose }: AIChatBoxProps) {
           <Send className="size-4" />
         </Button>
       </form>
+    </div>
+  );
+}
+
+interface ChatMessageProps{
+  message: UIMessage
+}
+
+function ChatMessage({ message}: ChatMessageProps){
+  const currentStep = message.parts[message.parts.length -1]
+
+  return (
+    <div className={cn(
+      "mb-2 flex max-w-[80%] flex-col prose dark:prose-invert",
+      message.role === "user" ? "ml-auto items-end" : "mr-auto items-start"
+    )}
+    >
+
+      <div
+      className={cn(
+        "prose dark:prose-invert rounded-lg px-3 py-2 text-sm",
+        message.role === "user"
+          ? "bg-primary text-primary-foreground"
+          : "bg-muted first:prose-p:mt-0"
+      )}  
+      >
+        {message.role === "assistant" && (
+          <div className="text-muted-foreground mb-1 flex items-center gap-1 text-xs font-medium">
+            <Bot className="text-primary size-3"/>
+            AI Assistant
+          </div>
+        )}
+        {currentStep?.type === "text" && (
+          <Markdown>{currentStep.text}</Markdown>
+        )}
+        {currentStep.type === "tool-invocation" && (
+          <div className="italic animate-pulse">Searching notes...</div>
+        )}
+      </div>
     </div>
   );
 }
