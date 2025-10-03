@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { useAuthToken } from "@convex-dev/auth/react";
 import { Bot, Expand, Minimize, Send, Trash, X } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, UIMessage } from "ai";
 import Markdown from "@/components/markdown";
@@ -34,6 +34,15 @@ interface AIChatBoxProps {
   onClose: () => void;
 }
 
+const initialMessages: UIMessage[] = [{
+  id: "welcome-message",
+  role: "assistant",
+  parts: [{
+    type: "text",
+    text: "Hello! I'm your Notes Assistant. Ask me anything about the notes you saved!"
+  }]
+}]
+
 function AIChatBox({ open, onClose }: AIChatBoxProps) {
   const [input, setInput] = useState("")
 
@@ -41,26 +50,43 @@ function AIChatBox({ open, onClose }: AIChatBoxProps) {
 
   const token = useAuthToken();
 
-  const { messages, sendMessage } = useChat({
+  const { messages, sendMessage, setMessages, status } = useChat({
     transport: new DefaultChatTransport({
       api: `${convexSiteUrl}/api/chat`,
       headers: {
         Authorization: `Bearer ${token}`,
       },
-    })
+    }),
+    messages: initialMessages
   });
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  const isProcessing = status === "submitted" || status === "streaming"
+
+  useEffect(() => {
+    if(open) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [open, messages]);
+
   function onSubmit(e: React.FormEvent){
     e.preventDefault();
-    if(input.trim()) {
+    if(input.trim() && !isProcessing) {
       sendMessage({text: input})
       setInput("")
     }
   }
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey){
+      onSubmit(e)
+    }
+  }
+
   if (!open) return null;
+
+  const lastMessageIsUser = messages[messages.length -1].role === "user";
 
   return (
     <div
@@ -89,9 +115,10 @@ function AIChatBox({ open, onClose }: AIChatBoxProps) {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => {}}
+            onClick={() => setMessages(initialMessages)}
             className="text-primary-foreground hover:bg-primary/90 h-8 w-8"
             title="Clear chat"
+            disabled={isProcessing}
           >
             <Trash />
           </Button>
@@ -110,6 +137,8 @@ function AIChatBox({ open, onClose }: AIChatBoxProps) {
         {messages.map(message => (
           <ChatMessage key={message.id} message={message}/>
         ))}
+        {status === "submitted" && lastMessageIsUser && <Loader />}
+        {status === "error" && <ErrorMessage />}
         <div ref={messagesEndRef} />
       </div>
 
@@ -117,12 +146,13 @@ function AIChatBox({ open, onClose }: AIChatBoxProps) {
         <Textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
+          onKeyDown={handleKeyDown}
           placeholder="Type your message..."
           className="max-h-[120px] min-h-[40px] resize-none overflow-y-auto"
           maxLength={1000}
           autoFocus
         />
-        <Button type="submit" size="icon">
+        <Button type="submit" size="icon" disabled={!input.trim() || isProcessing}>
           <Send className="size-4" />
         </Button>
       </form>
@@ -177,4 +207,12 @@ function Loader() {
       <div className="bg-primary size-1.5 animate-pulse rounded-full delay-300" />
     </div>
   );
+}
+
+function ErrorMessage () {
+  return (
+    <div className="text-sm text-red-50">
+      Something went wrong. Please try again!
+    </div>
+  )
 }
