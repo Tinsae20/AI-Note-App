@@ -21,7 +21,7 @@ import { toast } from "sonner";
 
 export function SigninForm() {
   const [step, setStep] = useState<"signIn" | "signUp">("signIn");
-  const { signIn, signOut} = useAuthActions()
+  const { signIn } = useAuthActions()
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
 
