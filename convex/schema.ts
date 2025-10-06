@@ -20,7 +20,7 @@ const schema = defineSchema({
     .index("by_noteId", ["noteId"])
     .vectorIndex("by_embedding", {
         vectorField: "embedding",
-        dimensions: 1024,
+        dimensions: 768,
         filterFields: ["userId"]
     })
 })

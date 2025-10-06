@@ -57,7 +57,7 @@ function AIChatBox({ open, onClose }: AIChatBoxProps) {
         Authorization: `Bearer ${token}`,
       },
     }),
-    messages: initialMessages
+    messages: initialMessages,
   });
 
   const messagesEndRef = useRef<HTMLDivElement>(null);

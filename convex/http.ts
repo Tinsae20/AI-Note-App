@@ -2,8 +2,10 @@ import { httpRouter } from "convex/server";
 import { auth } from "./auth";
 import { httpAction } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
-import { convertToModelMessages, streamText, UIMessage } from "ai";
+import { convertToModelMessages, streamText, tool, UIMessage } from "ai";
 import { deepseek } from "@ai-sdk/deepseek";
+import { z } from "zod/v4";
+import { internal } from "./_generated/api";
 
 const http = httpRouter();
 
@@ -25,8 +27,41 @@ http.route({
 
         const result = streamText({
             model: deepseek("deepseek-chat"),
-            system: "You are a helpful assistant that helps users manage their notes. You respond in a concise and clear manner.",
+            system: `
+            You are a helpful assistant that can search through the user's notes.
+            Use the information from the notes to answer questions and provide insights.
+            If the requested information is not available, respond with "Sorry, I can't find that information in your notes".
+            You can use markdown formatting like links, bullet points, numbered lists, and bold text.
+            Provide links to relevant notes using this relative URL structure (omit the base URL): '/notes?noteId=<note-id>'.
+            Keep your responses concise and to the point.
+            `,
             messages: convertToModelMessages(lastMessages),
+            tools: {
+                findRelevantNotes: tool<{ query: string }, unknown>({
+                    description: 
+                      "Retrieve relevant notes from the database based on the user's query",
+                    inputSchema: z.object({
+                        query: z.string().describe("The user's query")
+                    }),
+                    execute: async ({ query } : {query: string}) => {
+                        console.log("Finding relevant notes query: ", query)
+                        const relevantNotes = await ctx.runAction(
+                            internal.notesActions.findRelevantNotes,
+                            {
+                                query,
+                                userId
+                            }
+                        );
+
+                        return relevantNotes.map((note) => ({
+                            id: note._id,
+                            title: note.title,
+                            body: note.body,
+                            creationTime: note._creationTime
+                        }));
+                    },
+                }),
+            },
             onError(error) {
                 console.error("Stream text error: ", error)
             }
