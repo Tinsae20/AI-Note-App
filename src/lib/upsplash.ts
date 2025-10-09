@@ -8,7 +8,7 @@ export async function fetchUpsplashImages (query: string , count: number = 5): P
 
     const res = await fetch(`https://api.unsplash.com/photos/random?query=${query}&count=${count}`,{
         headers: {
-            Authorization: `Client-ID ${process.env.NEXT_PUBLIC_UNSPLASH_ACCESS_KEY}`
+            Authorization: `Client-ID ${process.env.UNSPLASH_ACCESS_KEY}`
         }
     });
 
