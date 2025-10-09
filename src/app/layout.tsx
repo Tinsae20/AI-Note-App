@@ -12,8 +12,8 @@ const geistSans = Geist({
 
 export const metadata: Metadata = {
   title: {
-    template: "%s | Smart Notes",
-    default: "Smart Notes",
+    template: "%s | EchoNote",
+    default: "EchoNote",
   },
   description:
     "A note-taking app with AI chatbot integration built with Convex and the Vercel AI SDK.",
