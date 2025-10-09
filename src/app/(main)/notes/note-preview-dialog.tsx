@@ -15,12 +15,14 @@ import { useMutation } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { toast } from "sonner";
 import { useState } from "react";
+import Image from "next/image";
 
 interface NotePreviewDialogProps {
   note: Doc<"notes">;
+  image?: string;
 }
 
-export function NotePreviewDialog({ note }: NotePreviewDialogProps) {
+export function NotePreviewDialog({ note, image }: NotePreviewDialogProps) {
 
   const searchParams = useSearchParams();
   const isOpen = searchParams.get("noteId") === note._id;
@@ -53,6 +55,18 @@ export function NotePreviewDialog({ note }: NotePreviewDialogProps) {
         <DialogHeader>
           <DialogTitle>{note.title}</DialogTitle>
         </DialogHeader>
+        {image ? (
+          <div className="relative w-full h-48 mb-3 rounded-md overflow-hidden">
+            <Image
+              src={image} // show first fetched image or fallback
+              alt="Unsplash background"
+              className="object-cover"
+              priority
+              sizes="(max-width: 768px) 100vw, 50vw"
+              fill
+            />
+          </div>
+        ) : null}
         <div className="mt-4 whitespace-pre-wrap">{note.body}</div>
         <DialogFooter className="mt-6">
           <Button variant="destructive" className="gap-2"

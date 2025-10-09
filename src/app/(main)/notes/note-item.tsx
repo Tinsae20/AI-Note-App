@@ -55,7 +55,7 @@ export function NoteItem({ note }: NoteItemProps) {
         </p>
       </div>
 
-      <NotePreviewDialog note={note}/>
+      <NotePreviewDialog note={note} image={randomImage}/>
     </>
   );
 }
